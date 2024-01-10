@@ -1,0 +1,13 @@
+[configuration]
+
+entry_symbol = "ogs_library_init"
+compatibility_minimum = "4.2"
+
+[libraries]
+
+windows.debug.x86_32 = "bin/windows/object-grid-system.windows.template_debug.dev.x86_32.dll"
+windows.release.x86_32 = "bin/windows/object-grid-system.windows.template_release.x86_32.dll"
+windows.debug.x86_64 = "bin/windows/object-grid-system.windows.template_debug.dev.x86_64.dll"
+windows.release.x86_64 = "bin/windows/object-grid-system.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "bin/linux/object-grid-system.linux.template_debug.dev.x86_64.so"
+linux.release.x86_64 = "bin/linux/object-grid-system.linux.template_release.x86_64.so"
