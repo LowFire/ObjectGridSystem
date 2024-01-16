@@ -15,12 +15,14 @@ void GridSpace2D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("object_with_id_exists", "id"), &GridSpace2D::object_with_id_exists);
 	ClassDB::bind_method(D_METHOD("remove_object", "object"), &GridSpace2D::remove_object);
 	ClassDB::bind_method(D_METHOD("remove_object_by_id", "id"), &GridSpace2D::remove_object_by_id);
+	ClassDB::bind_method(D_METHOD("remove_all_objects"), &GridSpace2D::remove_all_objects);
 	ClassDB::bind_method(D_METHOD("add_object", "object"), &GridSpace2D::add_object);
 	ClassDB::bind_method(D_METHOD("add_objects", "object_array"), &GridSpace2D::add_objects);
 	ClassDB::bind_method(D_METHOD("object_is_overlapping", "object"), &GridSpace2D::object_is_overlapping);
 	ClassDB::bind_method(D_METHOD("object_is_outside_grid", "object"), &GridSpace2D::object_is_outside_grid);
 	ClassDB::bind_method(D_METHOD("objects_are_overlapping", "object1", "object2"), &GridSpace2D::objects_are_overlapping);
 	ClassDB::bind_method(D_METHOD("object_overlaps_at_position", "object", "position"), &GridSpace2D::object_overlaps_at_position);
+	ClassDB::bind_method(D_METHOD("get_pixel_bounds_for_object", "object"), &GridSpace2D::get_pixel_bounds_for_object);
 	ClassDB::bind_method(D_METHOD("_on_object_dimensions_changed"), &GridSpace2D::_on_object_dimensions_changed);
 	ClassDB::bind_method(D_METHOD("_on_object_position_changed"), &GridSpace2D::_on_object_position_changed);
 
@@ -29,8 +31,8 @@ void GridSpace2D::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("grid_dimensions_changed", PropertyInfo(Variant::VECTOR2I, "old_dimensions"), PropertyInfo(Variant::VECTOR2I, "new_dimensions")));
 	ADD_SIGNAL(MethodInfo("slot_dimensions_changed", PropertyInfo(Variant::VECTOR2I, "old_dimensions"), PropertyInfo(Variant::VECTOR2I, "new_dimensions")));
-	ADD_SIGNAL(MethodInfo("object_added", PropertyInfo(Variant::OBJECT, "object")));
-	ADD_SIGNAL(MethodInfo("object_removed", PropertyInfo(Variant::OBJECT, "object")));
+	ADD_SIGNAL(MethodInfo("object_added", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::INT, "id")));
+	ADD_SIGNAL(MethodInfo("object_removed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::INT, "id")));
 	ADD_SIGNAL(MethodInfo("object_dimensions_changed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::VECTOR2I, "old_dimensions"), PropertyInfo(Variant::VECTOR2I, "new_dimensions")));
 	ADD_SIGNAL(MethodInfo("object_position_changed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::VECTOR2I, "old_position"), PropertyInfo(Variant::VECTOR2I, "new_position")));
 }
@@ -47,7 +49,7 @@ void GridSpace2D::remove_object(GridObject2D* p_obj) {
 			p_obj->disconnect("grid_dimensions_changed", _object_dimensions_changed_callback);
 			p_obj->disconnect("grid_position_changed", _object_position_changed_callback);
 			remove_child(p_obj);
-			emit_signal("object_removed", p_obj);
+			emit_signal("object_removed", p_obj, E.key);
 			break;
 		}
 	}
@@ -61,7 +63,15 @@ void GridSpace2D::remove_object_by_id(int id) {
 	remove->disconnect("grid_position_changed", _object_position_changed_callback);
 	remove_child(remove);
 	_grid_objects.erase(id);
-	emit_signal("object_removed", remove);
+	emit_signal("object_removed", remove, id);
+}
+
+void GridSpace2D::remove_all_objects() {
+	Dictionary all_objs = get_all_objects();
+	Array keys = all_objs.keys();
+	for(int i = 0; i < keys.size(); i++) {
+		remove_object_by_id(keys[i]);
+	}
 }
 
 int GridSpace2D::add_object(GridObject2D *p_obj) {
@@ -72,9 +82,9 @@ int GridSpace2D::add_object(GridObject2D *p_obj) {
 	p_obj->connect("grid_position_changed", _object_position_changed_callback);
 
 	//We need to update the newly added grid object
-	_on_object_dimensions_changed(p_obj, Vector2i(),p_obj->get_grid_dimensions());
+	_on_object_dimensions_changed(p_obj, Vector2i(), p_obj->get_grid_dimensions());
 	_on_object_position_changed(p_obj, Vector2i(), p_obj->get_grid_position());
-	emit_signal("object_added", p_obj);
+	emit_signal("object_added", p_obj, id);
 	return id;
  }
 
@@ -91,6 +101,7 @@ TypedArray<int> GridSpace2D::add_objects(const TypedArray<GridObject2D> &p_obj_a
 
 bool GridSpace2D::object_is_overlapping(const GridObject2D* p_obj) {
 	for(KeyValue<int, GridObject2D*> &E : _grid_objects) {
+		if (E.value == p_obj) continue;
 		if (objects_are_overlapping(p_obj, E.value)) {
 			return true;
 		}
@@ -120,6 +131,7 @@ bool GridSpace2D::object_overlaps_at_position(const GridObject2D* p_obj, const V
 	Rect2i obj_bounds = p_obj->get_grid_bounds();
 	Rect2i proxy_bounds = Rect2i(p_position.x, p_position.y, obj_bounds.size.x, obj_bounds.size.y);
 	for(KeyValue<int, GridObject2D*> &E : _grid_objects) {
+		if (E.value == p_obj) continue;
 		if (proxy_bounds.intersects(E.value->get_grid_bounds())){
 			return true;
 		}
@@ -142,7 +154,7 @@ void GridSpace2D::_on_object_dimensions_changed(GridObject2D *p_obj, Vector2i p_
 
 void GridSpace2D::_on_object_position_changed(GridObject2D *p_obj, Vector2i p_old_position, Vector2i p_new_position) {
 	//Reposition the object
-	Vector2 new_position = Vector2(_slot_dimensions.x * new_position.x, _slot_dimensions.y * new_position.y);
+	Vector2i new_position = Vector2i(_slot_dimensions.x * p_new_position.x, _slot_dimensions.y * p_new_position.y);
 	p_obj->set_position(new_position);
 
 	emit_signal("object_position_changed", p_obj, p_old_position, p_new_position);

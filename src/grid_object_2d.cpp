@@ -15,7 +15,7 @@ void GridObject2D::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("grid_dimensions_changed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::VECTOR2I, "old_dimensions"), PropertyInfo(Variant::VECTOR2I, "new_dimensions")));
 	ADD_SIGNAL(MethodInfo("grid_position_changed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::VECTOR2I, "old_position"), PropertyInfo(Variant::VECTOR2I, "new_position")));
 
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2I, "dimensions"), "set_grid_dimensions", "get_dimensions");
-	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2I, "position"), "set_position", "get_position");
-	ADD_PROPERTY(PropertyInfo(Variant::RECT2I, "bounds"), "set_bounds", "get_bounds");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2I, "grid_dimensions"), "set_grid_dimensions", "get_grid_dimensions");
+	ADD_PROPERTY(PropertyInfo(Variant::VECTOR2I, "grid_position"), "set_grid_position", "get_grid_position");
+	ADD_PROPERTY(PropertyInfo(Variant::RECT2I, "grid_bounds"), "set_grid_bounds", "get_grid_bounds");
 }

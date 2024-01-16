@@ -60,6 +60,7 @@ class GridSpace2D : public Node2D {
 
 	void remove_object(GridObject2D* p_obj);
 	void remove_object_by_id(int id);
+	void remove_all_objects();
 	Rect2i get_pixel_bounds_for_object(const GridObject2D* p_obj) const;
 	int add_object(GridObject2D *p_obj);
 	TypedArray<int> add_objects(const TypedArray<GridObject2D> &p_obj_arr);
@@ -67,5 +68,8 @@ class GridSpace2D : public Node2D {
 	bool object_is_outside_grid(const GridObject2D* p_obj) const;
 	bool objects_are_overlapping(const GridObject2D* p_obj1, const GridObject2D* p_obj2) const;
 	bool object_overlaps_at_position(const GridObject2D* p_obj, const Vector2i p_position);
+
+	GridSpace2D(){}
+	~GridSpace2D(){}
 };
 } //namespace godot

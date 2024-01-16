@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run All GUT Tests",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "C:/Godot/Godot.exe",
+            "args": ["-d", "-s", "addons/gut/gut_cmdln.gd"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/sample",
+            "environment": [],
+            "console": "integratedTerminal",
+        },
+        {
+            "name": "Run Single GUT Test",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "C:/Godot/Godot.exe",
+            "args": ["-d", "-s", "addons/gut/gut_cmdln.gd", "-gunit_test_name=test_get_set_slot_dimensions"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/sample",
+            "environment": [],
+            "console": "integratedTerminal",
+        },
+    ]
+}
