@@ -6,8 +6,8 @@
 
 namespace godot 
 {
-class GridObject2D : public Node2D {
-	GDCLASS(GridObject2D, Node2D);
+class GridNode2D : public Node2D {
+	GDCLASS(GridNode2D, Node2D);
 
 	private:
 	Rect2i _grid_bounds = Rect2i(0,0,1,1);
@@ -37,7 +37,7 @@ class GridObject2D : public Node2D {
 	}
 	void rotate() {}
 
-	GridObject2D(){}
-	~GridObject2D(){}
+	GridNode2D(){}
+	~GridNode2D(){}
 };
 } //namespace godot
