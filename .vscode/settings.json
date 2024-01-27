@@ -11,7 +11,12 @@
 	"godot_tools.editor_path": "d:\\Projects\\Godot\\Godot_v4.exe",
 	"files.associations": {
 		"*.rmd": "markdown",
-		"utility": "cpp"
+		"utility": "cpp",
+		"charconv": "cpp",
+		"ios": "cpp",
+		"istream": "cpp",
+		"ostream": "cpp",
+		"xstring": "cpp"
 	},
 	"grammarly.selectors": [
 		{

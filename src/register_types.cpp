@@ -1,9 +1,7 @@
 #include "register_types.h"
 
-#include "grid_node_2d.h"
-#include "grid_space_node_2d.h"
-#include "grid_space_control.h"
-#include "grid_control.h"
+#include "grid_object.h"
+#include "grid_space.h"
 
 #include <gdextension_interface.h>
 #include <godot_cpp/core/defs.hpp>
@@ -16,10 +14,8 @@ void initialize_module(ModuleInitializationLevel p_level) {
 		return;
 	}
 
-	ClassDB::register_class<GridNode2D>();
-	ClassDB::register_class<GridSpaceNode2D>();
-	ClassDB::register_class<GridControl>();
-	ClassDB::register_class<GridSpaceControl>();
+	ClassDB::register_class<GridObject>();
+	ClassDB::register_class<GridSpace>();
 }
 
 void uninitialize_module(ModuleInitializationLevel p_level) {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "godot_cpp/classes/node2d.hpp"
+#include "godot_cpp/classes/ref_counted.hpp"
 #include "godot_cpp/variant/vector2i.hpp"
 #include "godot_cpp/variant/rect2i.hpp"
 
 namespace godot 
 {
-class GridNode2D : public Node2D {
-	GDCLASS(GridNode2D, Node2D);
+class GridObject : public RefCounted {
+	GDCLASS(GridObject, RefCounted);
 
 	private:
 	Rect2i _grid_bounds = Rect2i(0,0,1,1);
@@ -37,7 +37,7 @@ class GridNode2D : public Node2D {
 	}
 	void rotate() {}
 
-	GridNode2D(){}
-	~GridNode2D(){}
+	GridObject(){}
+	~GridObject(){}
 };
 } //namespace godot
