@@ -17,12 +17,14 @@ void GridSpace::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("remove_object_by_id", "id"), &GridSpace::remove_object_by_id);
 	ClassDB::bind_method(D_METHOD("remove_all_objects"), &GridSpace::remove_all_objects);
 	ClassDB::bind_method(D_METHOD("add_object", "object"), &GridSpace::add_object);
+	ClassDB::bind_method(D_METHOD("add_object_with_id", "object", "id"), &GridSpace::add_object_with_id);
 	ClassDB::bind_method(D_METHOD("add_objects", "object_array"), &GridSpace::add_objects);
 	ClassDB::bind_method(D_METHOD("object_is_overlapping", "object"), &GridSpace::object_is_overlapping);
 	ClassDB::bind_method(D_METHOD("object_is_outside_grid", "object"), &GridSpace::object_is_outside_grid);
 	ClassDB::bind_method(D_METHOD("objects_are_overlapping", "object1", "object2"), &GridSpace::objects_are_overlapping);
 	ClassDB::bind_method(D_METHOD("object_overlaps_at_position", "object", "position"), &GridSpace::object_overlaps_at_position);
 	ClassDB::bind_method(D_METHOD("get_pixel_bounds_for_object", "object"), &GridSpace::get_pixel_bounds_for_object);
+	ClassDB::bind_method(D_METHOD("find_best_fit_for_object", "object", "out_data"), &GridSpace::find_best_fit_for_object);
 	ClassDB::bind_method(D_METHOD("_on_object_dimensions_changed"), &GridSpace::_on_object_dimensions_changed);
 	ClassDB::bind_method(D_METHOD("_on_object_position_changed"), &GridSpace::_on_object_position_changed);
 
@@ -74,6 +76,14 @@ int GridSpace::add_object(GridObject *p_obj) {
 	p_obj->connect("grid_position_changed", _object_position_changed_callback);
 	emit_signal("object_added", p_obj, id);
 	return id;
+ }
+
+ void GridSpace::add_object_with_id(GridObject *p_obj, int id) {
+	ERR_FAIL_COND_MSG(_grid_objects.has(id), "Failed to add object to grid space. An object with that id already exists.");
+	_grid_objects.insert(id, p_obj);
+	p_obj->connect("grid_dimensions_changed", _object_dimensions_changed_callback);
+	p_obj->connect("grid_position_changed", _object_position_changed_callback);
+	emit_signal("object_added", p_obj, id);
  }
 
 TypedArray<int> GridSpace::add_objects(const TypedArray<GridObject> &p_obj_arr) {
@@ -135,6 +145,36 @@ Rect2i GridSpace::get_pixel_bounds_for_object(const GridObject* p_obj) const {
 	return ret;
 }
 
+bool GridSpace::find_best_fit_for_object(const GridObject* p_obj, Dictionary out_data) {
+	Vector2i obj_dimensions = p_obj->get_grid_dimensions();
+	out_data["position"] = Vector2i(-1,-1);
+	out_data["rotated"] = false;
+	//try out not rotated first
+	for (int y = 0; y <= _grid_dimensions.y - obj_dimensions.y; y++) {
+		for (int x = 0; x <= _grid_dimensions.x - obj_dimensions.x; x++) {
+			Vector2i position = Vector2i(x, y);
+			if (object_overlaps_at_position(p_obj, position)) continue;
+			out_data["position"] = position;
+			out_data["rotated"] = false;
+			return true;
+		}
+	}
+	//then rotate
+	GridObject proxy_obj;
+	proxy_obj.set_grid_bounds(p_obj->get_grid_bounds());
+	proxy_obj.set_rotated(true);
+	Vector2i proxy_obj_dimensions = proxy_obj.get_grid_dimensions();
+	for (int y = 0; y <= _grid_dimensions.y - proxy_obj_dimensions.y; y++) {
+		for (int x = 0; x <= _grid_dimensions.x - proxy_obj_dimensions.x; x++) {
+			Vector2i position = Vector2i(x, y);
+			if (object_overlaps_at_position(&proxy_obj, position)) continue;
+			out_data["position"] = position;
+			out_data["rotated"] = true;
+			return true;
+		}
+	}
+	return false;
+}
 
 void GridSpace::_on_object_dimensions_changed(GridObject *p_obj, Vector2i p_old_dimensions, Vector2i p_new_dimensions) {
 	emit_signal("object_dimensions_changed", p_obj, p_old_dimensions, p_new_dimensions);
@@ -145,6 +185,9 @@ void GridSpace::_on_object_position_changed(GridObject *p_obj, Vector2i p_old_po
 }
 
 int GridSpace::_generate_unique_id() {
+	while (_grid_objects.has(_id_counter)) {
+		_id_counter++;
+	}
 	int new_id = _id_counter;
 	_id_counter++;
 	return new_id;

@@ -40,6 +40,23 @@ class TestGridSpace extends GutTest:
 		assert_signal_emitted(grid_space, "object_added")
 		assert_eq(grid_space.get_pixel_bounds_for_object(obj1).position, Vector2i(200, 200))
 	
+	func test_add_object_with_id() -> void:
+		var obj1: GridObject = GridObject.new()
+		obj1.grid_dimensions = Vector2i(2, 2)
+		obj1.grid_position = Vector2i(2, 2)
+		watch_signals(obj1)
+		
+		grid_space.add_object_with_id(obj1, 2)
+		
+		var all_objects: Dictionary = grid_space.get_all_objects()
+		assert_eq(all_objects.size(), 1)
+		assert_true(all_objects.has(2))
+		assert_connected(obj1, grid_space, "grid_dimensions_changed")
+		assert_connected(obj1, grid_space, "grid_position_changed")
+		assert_signal_emitted(grid_space, "object_added")
+		assert_eq(grid_space.get_pixel_bounds_for_object(obj1).position, Vector2i(200, 200))
+		assert_true(grid_space.object_with_id_exists(2))
+	
 	func test_add_multiple_objects() -> void:
 		var obj1: GridObject = GridObject.new()
 		var obj2: GridObject = GridObject.new()
@@ -111,10 +128,10 @@ class TestGridSpace extends GutTest:
 		assert_signal_emitted(grid_space, "object_added")
 	
 	func test_object_removed_signal() -> void:
-		#var callback: Callable = func (obj: GridObject, id: int) -> void:
-			#assert_ne(obj, null)
-			#assert_eq(id, 0)
-		#grid_space.object_removed.connect(callback)
+		var callback: Callable = func (obj: GridObject, id: int) -> void:
+			assert_ne(obj, null)
+			assert_eq(id, 0)
+		grid_space.object_removed.connect(callback)
 		
 		var obj: GridObject = GridObject.new()
 		grid_space.add_object(obj)
@@ -266,6 +283,72 @@ class TestGridSpace extends GutTest:
 		assert_false(result1)
 		assert_false(result2)
 		assert_true(result3)
+	
+	func test_find_best_fit_no_rotated() -> void:
+		var obj1: GridObject = GridObject.new()
+		var obj2: GridObject = GridObject.new()
+		var obj3: GridObject = GridObject.new()
+		var obj_fit: GridObject = GridObject.new()
+		obj1.grid_bounds = Rect2i(0,0,2,2)
+		obj2.grid_bounds = Rect2i(0,3,2,2)
+		obj3.grid_bounds = Rect2i(3,0,2,2)
+		obj_fit.grid_bounds = Rect2i(0,0,3,2)
+		grid_space.grid_dimensions = Vector2i(5,5)
+		grid_space.add_objects([obj1, obj2, obj3])
+		var ret: Dictionary
+		
+		var result: bool = grid_space.find_best_fit_for_object(obj_fit, ret)
+		
+		assert_true(result)
+		assert_eq(ret.position, Vector2i(2,2))
+		assert_false(ret.rotated)
+	
+	func test_find_best_fit_rotated() -> void:
+		var obj1: GridObject = GridObject.new()
+		var obj2: GridObject = GridObject.new()
+		var obj3: GridObject = GridObject.new()
+		var obj_fit: GridObject = GridObject.new()
+		obj1.grid_bounds = Rect2i(0,0,2,2)
+		obj2.grid_bounds = Rect2i(3,0,2,2)
+		obj3.grid_bounds = Rect2i(1,2,2,2)
+		obj_fit.grid_bounds = Rect2i(0,0,3,2)
+		grid_space.grid_dimensions = Vector2i(5,5)
+		grid_space.add_objects([obj1, obj2, obj3])
+		var ret: Dictionary
+		
+		var result: bool = grid_space.find_best_fit_for_object(obj_fit, ret)
+		
+		assert_true(result)
+		assert_eq(ret.position, Vector2i(3,2))
+		assert_true(ret.rotated)
+	
+	func test_find_best_fit_no_room() -> void:
+		var obj1: GridObject = GridObject.new()
+		var obj2: GridObject = GridObject.new()
+		obj1.grid_bounds = Rect2i(0,0,2,2)
+		obj2.grid_bounds = Rect2i(0,0,3,2)
+		grid_space.grid_dimensions = Vector2i(3,3)
+		grid_space.add_object(obj1)
+		var ret: Dictionary
+		
+		var result: bool = grid_space.find_best_fit_for_object(obj2, ret)
+		
+		assert_false(result)
+		assert_eq(ret.position, Vector2i(-1,-1))
+		assert_false(ret.rotated)
+	
+	func test_find_best_fit_too_small() -> void:
+		var obj: GridObject = GridObject.new()
+		obj.grid_bounds = Rect2i(0,0,3,2)
+		grid_space.grid_dimensions = Vector2i(2,2)
+		grid_space.add_object(obj)
+		var ret: Dictionary
+		
+		var result: bool = grid_space.find_best_fit_for_object(obj, ret)
+		
+		assert_false(result)
+		assert_eq(ret.position, Vector2i(-1,-1))
+		assert_false(ret.rotated)
 
 class TestGridObject extends GutTest:
 	var grid_object: GridObject

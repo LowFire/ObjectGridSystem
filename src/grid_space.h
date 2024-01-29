@@ -65,11 +65,13 @@ class GridSpace : public RefCounted {
 	void remove_all_objects();
 	Rect2i get_pixel_bounds_for_object(const GridObject* p_obj) const;
 	int add_object(GridObject *p_obj);
+	void add_object_with_id(GridObject *p_obj, int id);
 	TypedArray<int> add_objects(const TypedArray<GridObject> &p_obj_arr);
 	bool object_is_overlapping(const GridObject* p_obj);
 	bool object_is_outside_grid(const GridObject* p_obj) const;
 	bool objects_are_overlapping(const GridObject* p_obj1, const GridObject* p_obj2) const;
 	bool object_overlaps_at_position(const GridObject* p_obj, const Vector2i p_position);
+	bool find_best_fit_for_object(const GridObject* p_obj, Dictionary out_data);
 
 	GridSpace(){
 		_object_dimensions_changed_callback = Callable(this, "_on_object_dimensions_changed");
