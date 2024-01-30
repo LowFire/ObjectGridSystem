@@ -39,13 +39,14 @@ void GridSpace::_bind_methods() {
 	ADD_SIGNAL(MethodInfo("object_position_changed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::VECTOR2I, "old_position"), PropertyInfo(Variant::VECTOR2I, "new_position")));
 }
 
-void GridSpace::remove_object(GridObject* p_obj) {
-	for (KeyValue<int, GridObject*> &E : _grid_objects) {
+void GridSpace::remove_object(Ref<GridObject> p_obj) {
+	for (KeyValue<int, Ref<GridObject>> &E : _grid_objects) {
 		if (p_obj == E.value) {
 			_grid_objects.erase(E.key);
 			p_obj->disconnect("grid_dimensions_changed", _object_dimensions_changed_callback);
 			p_obj->disconnect("grid_position_changed", _object_position_changed_callback);
 			emit_signal("object_removed", p_obj, E.key);
+			p_obj->unreference();
 			break;
 		}
 	}
@@ -54,7 +55,7 @@ void GridSpace::remove_object(GridObject* p_obj) {
 void GridSpace::remove_object_by_id(int id) {
 	if (!_grid_objects.has(id)) return;
 
-	GridObject* remove = _grid_objects[id];
+	Ref<GridObject> remove = _grid_objects[id];
 	remove->disconnect("grid_dimensions_changed", _object_dimensions_changed_callback);
 	remove->disconnect("grid_position_changed", _object_position_changed_callback);
 	_grid_objects.erase(id);
@@ -69,7 +70,7 @@ void GridSpace::remove_all_objects() {
 	}
 }
 
-int GridSpace::add_object(GridObject *p_obj) {
+int GridSpace::add_object(Ref<GridObject> p_obj) {
 	int id = _generate_unique_id();
 	_grid_objects.insert(id, p_obj);
 	p_obj->connect("grid_dimensions_changed", _object_dimensions_changed_callback);
@@ -78,7 +79,7 @@ int GridSpace::add_object(GridObject *p_obj) {
 	return id;
  }
 
- void GridSpace::add_object_with_id(GridObject *p_obj, int id) {
+ void GridSpace::add_object_with_id(Ref<GridObject> p_obj, int id) {
 	ERR_FAIL_COND_MSG(_grid_objects.has(id), "Failed to add object to grid space. An object with that id already exists.");
 	_grid_objects.insert(id, p_obj);
 	p_obj->connect("grid_dimensions_changed", _object_dimensions_changed_callback);
@@ -97,8 +98,8 @@ TypedArray<int> GridSpace::add_objects(const TypedArray<GridObject> &p_obj_arr) 
 	return ret_ids;
 }
 
-bool GridSpace::object_is_overlapping(const GridObject* p_obj) {
-	for(KeyValue<int, GridObject*> &E : _grid_objects) {
+bool GridSpace::object_is_overlapping(const Ref<GridObject> p_obj) {
+	for(KeyValue<int, Ref<GridObject>> &E : _grid_objects) {
 		if (E.value == p_obj) continue;
 		if (objects_are_overlapping(p_obj, E.value)) {
 			return true;
@@ -107,7 +108,7 @@ bool GridSpace::object_is_overlapping(const GridObject* p_obj) {
 	return false;
 }
 
-bool GridSpace::object_is_outside_grid(const GridObject* p_obj) const {
+bool GridSpace::object_is_outside_grid(const Ref<GridObject> p_obj) const {
 	Rect2i obj_bounds = p_obj->get_grid_bounds();
 	Rect2i grid_bounds = Rect2i(0,0,_grid_dimensions.x, _grid_dimensions.y);
 	if (!grid_bounds.encloses(obj_bounds)) {
@@ -116,7 +117,7 @@ bool GridSpace::object_is_outside_grid(const GridObject* p_obj) const {
 	return false;
 }
 
-bool GridSpace::objects_are_overlapping(const GridObject* p_obj1, const GridObject* p_obj2) const {
+bool GridSpace::objects_are_overlapping(const Ref<GridObject> p_obj1, const Ref<GridObject> p_obj2) const {
 	Rect2i obj1_bounds = p_obj1->get_grid_bounds();
 	Rect2i obj2_bounds = p_obj2->get_grid_bounds();
 	if (obj1_bounds.intersects(obj2_bounds)) {
@@ -125,10 +126,10 @@ bool GridSpace::objects_are_overlapping(const GridObject* p_obj1, const GridObje
 	return false;
 }
 
-bool GridSpace::object_overlaps_at_position(const GridObject* p_obj, const Vector2i p_position) {
+bool GridSpace::object_overlaps_at_position(const Ref<GridObject> p_obj, const Vector2i p_position) {
 	Rect2i obj_bounds = p_obj->get_grid_bounds();
 	Rect2i proxy_bounds = Rect2i(p_position.x, p_position.y, obj_bounds.size.x, obj_bounds.size.y);
-	for(KeyValue<int, GridObject*> &E : _grid_objects) {
+	for(KeyValue<int, Ref<GridObject>> &E : _grid_objects) {
 		if (E.value == p_obj) continue;
 		if (proxy_bounds.intersects(E.value->get_grid_bounds())){
 			return true;
@@ -137,7 +138,7 @@ bool GridSpace::object_overlaps_at_position(const GridObject* p_obj, const Vecto
 	return false;
 }
 
-Rect2i GridSpace::get_pixel_bounds_for_object(const GridObject* p_obj) const {
+Rect2i GridSpace::get_pixel_bounds_for_object(const Ref<GridObject> p_obj) const {
 	Rect2i obj_bounds = p_obj->get_grid_bounds();
 	Rect2i ret;
 	ret.size = Vector2i(obj_bounds.size.x * _slot_dimensions.x, obj_bounds.size.y * _slot_dimensions.y);
@@ -145,7 +146,7 @@ Rect2i GridSpace::get_pixel_bounds_for_object(const GridObject* p_obj) const {
 	return ret;
 }
 
-bool GridSpace::find_best_fit_for_object(const GridObject* p_obj, Dictionary out_data) {
+bool GridSpace::find_best_fit_for_object(const Ref<GridObject> p_obj, Dictionary out_data) {
 	Vector2i obj_dimensions = p_obj->get_grid_dimensions();
 	out_data["position"] = Vector2i(-1,-1);
 	out_data["rotated"] = false;
@@ -160,14 +161,14 @@ bool GridSpace::find_best_fit_for_object(const GridObject* p_obj, Dictionary out
 		}
 	}
 	//then rotate
-	GridObject proxy_obj;
-	proxy_obj.set_grid_bounds(p_obj->get_grid_bounds());
-	proxy_obj.set_rotated(true);
-	Vector2i proxy_obj_dimensions = proxy_obj.get_grid_dimensions();
+	Ref<GridObject> proxy_obj = memnew(GridObject);
+	proxy_obj->set_grid_bounds(p_obj->get_grid_bounds());
+	proxy_obj->set_rotated(true);
+	Vector2i proxy_obj_dimensions = proxy_obj->get_grid_dimensions();
 	for (int y = 0; y <= _grid_dimensions.y - proxy_obj_dimensions.y; y++) {
 		for (int x = 0; x <= _grid_dimensions.x - proxy_obj_dimensions.x; x++) {
 			Vector2i position = Vector2i(x, y);
-			if (object_overlaps_at_position(&proxy_obj, position)) continue;
+			if (object_overlaps_at_position(proxy_obj, position)) continue;
 			out_data["position"] = position;
 			out_data["rotated"] = true;
 			return true;
@@ -176,11 +177,11 @@ bool GridSpace::find_best_fit_for_object(const GridObject* p_obj, Dictionary out
 	return false;
 }
 
-void GridSpace::_on_object_dimensions_changed(GridObject *p_obj, Vector2i p_old_dimensions, Vector2i p_new_dimensions) {
+void GridSpace::_on_object_dimensions_changed(Ref<GridObject> p_obj, Vector2i p_old_dimensions, Vector2i p_new_dimensions) {
 	emit_signal("object_dimensions_changed", p_obj, p_old_dimensions, p_new_dimensions);
 }
 
-void GridSpace::_on_object_position_changed(GridObject *p_obj, Vector2i p_old_position, Vector2i p_new_position) {
+void GridSpace::_on_object_position_changed(Ref<GridObject> p_obj, Vector2i p_old_position, Vector2i p_new_position) {
 	emit_signal("object_position_changed", p_obj, p_old_position, p_new_position);
 }
 
