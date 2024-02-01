@@ -71,7 +71,8 @@ class GridSpace : public RefCounted {
 	bool object_is_outside_grid(const Ref<GridObject> p_obj) const;
 	bool objects_are_overlapping(const Ref<GridObject> p_obj1, const Ref<GridObject> p_obj2) const;
 	bool object_overlaps_at_position(const Ref<GridObject> p_obj, const Vector2i p_position);
-	bool find_best_fit_for_object(const Ref<GridObject> p_obj, Dictionary out_data);
+	Dictionary find_best_fit_for_object(const Ref<GridObject> p_obj);
+	bool object_can_fit(Ref<GridObject> p_obj);
 
 	GridSpace(){
 		_object_dimensions_changed_callback = Callable(this, "_on_object_dimensions_changed");

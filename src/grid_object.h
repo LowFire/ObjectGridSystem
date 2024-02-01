@@ -26,6 +26,9 @@ class GridObject : public RefCounted {
 	Rect2i get_grid_bounds() const { return _grid_bounds; }
 	void set_grid_bounds(const Rect2i &p_bounds);
 	void set_rotated(bool rotate);
+	bool is_rotated() { return _rotated; }
+	Dictionary to_dict();
+	Ref<GridObject> from_dict(Dictionary data);
 
 	GridObject(){}
 	~GridObject(){}

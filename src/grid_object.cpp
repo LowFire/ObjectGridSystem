@@ -13,6 +13,9 @@ void GridObject::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_grid_bounds"), &GridObject::get_grid_bounds);
 	ClassDB::bind_method(D_METHOD("set_grid_bounds", "bounds"), &GridObject::set_grid_bounds);
 	ClassDB::bind_method(D_METHOD("set_rotated", "rotate"), &GridObject::set_rotated);
+	ClassDB::bind_method(D_METHOD("is_rotated"), &GridObject::is_rotated);
+	ClassDB::bind_method(D_METHOD("to_dict"), &GridObject::to_dict);
+	ClassDB::bind_method(D_METHOD("from_dict", "data"), &GridObject::from_dict);
 
 	ADD_SIGNAL(MethodInfo("grid_dimensions_changed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::VECTOR2I, "old_dimensions"), PropertyInfo(Variant::VECTOR2I, "new_dimensions")));
 	ADD_SIGNAL(MethodInfo("grid_position_changed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::VECTOR2I, "old_position"), PropertyInfo(Variant::VECTOR2I, "new_position")));
@@ -61,4 +64,20 @@ void GridObject::set_grid_position(const Vector2i &pos) {
 	Vector2i old_position = _grid_bounds.position;
 	_grid_bounds.position = pos;
 	emit_signal("grid_position_changed", this, old_position, _grid_bounds.position);
+}
+
+Dictionary GridObject::to_dict() {
+	Dictionary ret;
+	ret["grid_dimensions"] = _grid_bounds.size;
+	ret["original_dimensions"] = _original_dimensions;
+	ret["grid_position"] = _grid_bounds.position;
+	ret["rotated"] = _rotated;
+	return ret;
+}
+
+Ref<GridObject> GridObject::from_dict(Dictionary data) {
+	set_grid_dimensions(data["grid_dimensions"]);
+	set_grid_position(data["grid_position"]);
+	set_rotated(data["rotated"]);
+	return this;
 }

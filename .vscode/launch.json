@@ -23,5 +23,16 @@
             "environment": [],
             "console": "integratedTerminal",
         },
+        {
+            "name": "Launch Project",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "C:/Godot/Godot.exe",
+            "args": ["--debug"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/../ProjectBonfire",
+            "environment": [],
+            "console": "integratedTerminal",
+        },
     ]
 }

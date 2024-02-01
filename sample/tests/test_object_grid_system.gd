@@ -295,13 +295,11 @@ class TestGridSpace extends GutTest:
 		obj_fit.grid_bounds = Rect2i(0,0,3,2)
 		grid_space.grid_dimensions = Vector2i(5,5)
 		grid_space.add_objects([obj1, obj2, obj3])
-		var ret: Dictionary
 		
-		var result: bool = grid_space.find_best_fit_for_object(obj_fit, ret)
+		var result: Dictionary = grid_space.find_best_fit_for_object(obj_fit)
 		
-		assert_true(result)
-		assert_eq(ret.position, Vector2i(2,2))
-		assert_false(ret.rotated)
+		assert_eq(result.position, Vector2i(2,2))
+		assert_false(result.rotated)
 	
 	func test_find_best_fit_rotated() -> void:
 		var obj1: GridObject = GridObject.new()
@@ -314,13 +312,11 @@ class TestGridSpace extends GutTest:
 		obj_fit.grid_bounds = Rect2i(0,0,3,2)
 		grid_space.grid_dimensions = Vector2i(5,5)
 		grid_space.add_objects([obj1, obj2, obj3])
-		var ret: Dictionary
 		
-		var result: bool = grid_space.find_best_fit_for_object(obj_fit, ret)
+		var result: Dictionary = grid_space.find_best_fit_for_object(obj_fit)
 		
-		assert_true(result)
-		assert_eq(ret.position, Vector2i(3,2))
-		assert_true(ret.rotated)
+		assert_eq(result.position, Vector2i(3,2))
+		assert_true(result.rotated)
 	
 	func test_find_best_fit_no_room() -> void:
 		var obj1: GridObject = GridObject.new()
@@ -329,26 +325,50 @@ class TestGridSpace extends GutTest:
 		obj2.grid_bounds = Rect2i(0,0,3,2)
 		grid_space.grid_dimensions = Vector2i(3,3)
 		grid_space.add_object(obj1)
-		var ret: Dictionary
 		
-		var result: bool = grid_space.find_best_fit_for_object(obj2, ret)
+		var result: Dictionary = grid_space.find_best_fit_for_object(obj2)
 		
-		assert_false(result)
-		assert_eq(ret.position, Vector2i(-1,-1))
-		assert_false(ret.rotated)
+		assert_eq(result.position, Vector2i(-1,-1))
+		assert_false(result.rotated)
 	
 	func test_find_best_fit_too_small() -> void:
 		var obj: GridObject = GridObject.new()
 		obj.grid_bounds = Rect2i(0,0,3,2)
 		grid_space.grid_dimensions = Vector2i(2,2)
 		grid_space.add_object(obj)
-		var ret: Dictionary
 		
-		var result: bool = grid_space.find_best_fit_for_object(obj, ret)
+		var result: Dictionary = grid_space.find_best_fit_for_object(obj)
+		
+		assert_eq(result.position, Vector2i(-1,-1))
+		assert_false(result.rotated)
+	
+	func test_object_can_fit() -> void:
+		var obj1: GridObject = GridObject.new()
+		var obj2: GridObject = GridObject.new()
+		var obj3: GridObject = GridObject.new()
+		var obj_fit: GridObject = GridObject.new()
+		obj1.grid_bounds = Rect2i(0,0,2,2)
+		obj2.grid_bounds = Rect2i(3,0,2,2)
+		obj3.grid_bounds = Rect2i(1,2,2,2)
+		obj_fit.grid_bounds = Rect2i(0,0,3,2)
+		grid_space.grid_dimensions = Vector2i(5,5)
+		grid_space.add_objects([obj1, obj2, obj3])
+		
+		var result: bool = grid_space.object_can_fit(obj_fit)
+		
+		assert_true(result)
+	
+	func test_object_cant_fit() -> void:
+		var obj1: GridObject = GridObject.new()
+		var obj2: GridObject = GridObject.new()
+		obj1.grid_bounds = Rect2i(0,0,2,2)
+		obj2.grid_bounds = Rect2i(0,0,3,2)
+		grid_space.grid_dimensions = Vector2i(3,3)
+		grid_space.add_object(obj1)
+		
+		var result: bool = grid_space.object_can_fit(obj2)
 		
 		assert_false(result)
-		assert_eq(ret.position, Vector2i(-1,-1))
-		assert_false(ret.rotated)
 
 class TestGridObject extends GutTest:
 	var grid_object: GridObject
@@ -413,3 +433,25 @@ class TestGridObject extends GutTest:
 		
 		assert_signal_emitted(grid_object, "grid_dimensions_changed")
 		assert_signal_emitted(grid_object, "grid_position_changed")
+	
+	func test_to_dict() -> void:
+		grid_object.grid_bounds = Rect2i(4,5,2,2)
+		grid_object.set_rotated(true)
+		
+		var data: Dictionary = grid_object.to_dict()
+		
+		assert_eq(data.grid_dimensions, Vector2i(2,2))
+		assert_eq(data.grid_position, Vector2i(4,5))
+		assert_true(data.rotated)
+	
+	func test_from_dict() -> void:
+		var data: Dictionary
+		data["grid_dimensions"] = Vector2i(3,3)
+		data["grid_position"] = Vector2i(5,2)
+		data["rotated"] = false
+		
+		var grid_obj = GridObject.new().from_dict(data)
+		
+		assert_eq(grid_obj.grid_dimensions, Vector2i(3,3))
+		assert_eq(grid_obj.grid_position, Vector2i(5,2))
+		assert_false(grid_obj.is_rotated())

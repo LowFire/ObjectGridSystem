@@ -24,7 +24,8 @@ void GridSpace::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("objects_are_overlapping", "object1", "object2"), &GridSpace::objects_are_overlapping);
 	ClassDB::bind_method(D_METHOD("object_overlaps_at_position", "object", "position"), &GridSpace::object_overlaps_at_position);
 	ClassDB::bind_method(D_METHOD("get_pixel_bounds_for_object", "object"), &GridSpace::get_pixel_bounds_for_object);
-	ClassDB::bind_method(D_METHOD("find_best_fit_for_object", "object", "out_data"), &GridSpace::find_best_fit_for_object);
+	ClassDB::bind_method(D_METHOD("find_best_fit_for_object", "object"), &GridSpace::find_best_fit_for_object);
+	ClassDB::bind_method(D_METHOD("object_can_fit", "object"), &GridSpace::object_can_fit);
 	ClassDB::bind_method(D_METHOD("_on_object_dimensions_changed"), &GridSpace::_on_object_dimensions_changed);
 	ClassDB::bind_method(D_METHOD("_on_object_position_changed"), &GridSpace::_on_object_position_changed);
 
@@ -146,18 +147,19 @@ Rect2i GridSpace::get_pixel_bounds_for_object(const Ref<GridObject> p_obj) const
 	return ret;
 }
 
-bool GridSpace::find_best_fit_for_object(const Ref<GridObject> p_obj, Dictionary out_data) {
+Dictionary GridSpace::find_best_fit_for_object(const Ref<GridObject> p_obj) {
 	Vector2i obj_dimensions = p_obj->get_grid_dimensions();
-	out_data["position"] = Vector2i(-1,-1);
-	out_data["rotated"] = false;
+	Dictionary ret;
+	ret["position"] = Vector2i(-1,-1);
+	ret["rotated"] = false;
 	//try out not rotated first
 	for (int y = 0; y <= _grid_dimensions.y - obj_dimensions.y; y++) {
 		for (int x = 0; x <= _grid_dimensions.x - obj_dimensions.x; x++) {
 			Vector2i position = Vector2i(x, y);
 			if (object_overlaps_at_position(p_obj, position)) continue;
-			out_data["position"] = position;
-			out_data["rotated"] = false;
-			return true;
+			ret["position"] = position;
+			ret["rotated"] = false;
+			return ret;
 		}
 	}
 	//then rotate
@@ -169,10 +171,18 @@ bool GridSpace::find_best_fit_for_object(const Ref<GridObject> p_obj, Dictionary
 		for (int x = 0; x <= _grid_dimensions.x - proxy_obj_dimensions.x; x++) {
 			Vector2i position = Vector2i(x, y);
 			if (object_overlaps_at_position(proxy_obj, position)) continue;
-			out_data["position"] = position;
-			out_data["rotated"] = true;
-			return true;
+			ret["position"] = position;
+			ret["rotated"] = true;
+			return ret;
 		}
+	}
+	return ret;
+}
+
+bool GridSpace::object_can_fit(Ref<GridObject> p_obj) {
+	Dictionary test = find_best_fit_for_object(p_obj);
+	if (test["position"] != Vector2i(-1, -1)) {
+		return true;
 	}
 	return false;
 }
